@@ -1,0 +1,23 @@
+name: Trigger SSQ Check
+
+on:
+  schedule:
+    # 22:30 Beijing time (UTC+8) = 14:30 UTC
+    # SSQ draws on Sunday(0), Tuesday(2), Thursday(4)
+    - cron: '30 14 * * 0,2,4'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger SSQ workflow
+        run: |
+          STATUS="000"
+          echo "Trigger status: "
+          if [ "" = "204" ]; then
+            echo "SSQ workflow triggered successfully"
+          else
+            echo "Failed to trigger SSQ workflow"
+            exit 1
+          fi
