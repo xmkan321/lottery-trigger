@@ -1,0 +1,23 @@
+name: Trigger DLT Check
+
+on:
+  schedule:
+    # 22:30 Beijing time (UTC+8) = 14:30 UTC
+    # DLT draws on Monday(1), Wednesday(3), Saturday(6)
+    - cron: '30 14 * * 1,3,6'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger DLT workflow
+        run: |
+          STATUS="000"
+          echo "Trigger status: "
+          if [ "" = "204" ]; then
+            echo "DLT workflow triggered successfully"
+          else
+            echo "Failed to trigger DLT workflow"
+            exit 1
+          fi
