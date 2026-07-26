@@ -12,10 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger DLT workflow
+        env:
+          TOKEN: ${{ secrets.TRIGGER_TOKEN }}
         run: |
-          STATUS="000"
-          echo "Trigger status: "
-          if [ "" = "204" ]; then
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"ref":"main"}' \
+            "https://api.github.com/repos/xmkan321/lottery-checker/actions/workflows/dlt.yml/dispatches")
+          echo "Trigger status: $STATUS"
+          if [ "$STATUS" = "204" ]; then
             echo "DLT workflow triggered successfully"
           else
             echo "Failed to trigger DLT workflow"
