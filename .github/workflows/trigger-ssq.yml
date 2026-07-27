@@ -1,46 +1,24 @@
-name: Trigger SSQ Check
+name: Trigger SSQ Check (Manual Backup)
 
+# NOTE: Schedule disabled. cron-job.org is now the primary reliable trigger.
+# This workflow is kept as a MANUAL backup - run it from the Actions tab
+# only if cron-job.org fails to trigger the SSQ check.
 on:
-  schedule:
-    # 22:30 Beijing (14:30 UTC) - Primary trigger
-    # 22:35 Beijing (14:35 UTC) - Backup (auto-skips if already ran)
-    # SSQ draws on Sunday(0), Tuesday(2), Thursday(4)
-    - cron: '30 14 * * 0,2,4'
-    - cron: '35 14 * * 0,2,4'
   workflow_dispatch:
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger SSQ workflow (with dedup check)
+      - name: Trigger SSQ workflow
         env:
           TOKEN: ${{ secrets.TRIGGER_TOKEN }}
         run: |
-          # Calculate 30 minutes ago for dedup check
-          SINCE=$(date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ)
-          echo "Checking for SSQ runs since $SINCE ..."
-
-          # Check if lottery-checker already has a recent SSQ run
-          RECENT=$(curl -s -H "Authorization: token $TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/xmkan321/lottery-checker/actions/workflows/ssq.yml/runs?per_page=5")
-
-          COUNT=$(echo "$RECENT" | jq '[.workflow_runs[] | select(.created_at >= "'$SINCE'")] | length')
-          echo "Recent SSQ runs in last 30min: $COUNT"
-
-          if [ "$COUNT" -gt 0 ]; then
-            echo "SSQ already triggered recently, skipping duplicate"
-            exit 0
-          fi
-
-          echo "No recent run found, triggering SSQ workflow..."
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             -d '{"ref":"main"}' \
             "https://api.github.com/repos/xmkan321/lottery-checker/actions/workflows/ssq.yml/dispatches")
-
           echo "Trigger status: $STATUS"
           if [ "$STATUS" = "204" ]; then
             echo "SSQ workflow triggered successfully"
